@@ -186,7 +186,7 @@ func (server *grpcServer) GetOrdersForAccount(ctx context.Context, request *wrap
 }
 
 func (server *grpcServer) UpdateOrderStatus(ctx context.Context, request *pb.UpdateOrderStatusRequest) (*emptypb.Empty, error) {
-	err := server.service.UpdateOrderStatus(ctx, request.OrderId, request.Status)
+	err := server.service.UpdateOrderPaymentStatus(ctx, request.OrderId, request.Status)
 
 	if err != nil {
 		log.Println("Error updating order status", err)

@@ -8,6 +8,7 @@ type Order struct {
 	TotalPrice    float64
 	AccountID     uint64
 	Status        string
+	PaymentStatus string
 	ProductsInfos []ProductsInfo    `gorm:"foreignKey:OrderID"`
 	Products      []*OrderedProduct `gorm:"-"`
 }
