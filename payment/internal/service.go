@@ -25,15 +25,11 @@ type Service interface {
 		email, name string) (*models.Customer, error)
 
 	CreateCheckoutSession(ctx context.Context,
+		userId uint64,
 		customerId string,
 		redirect string,
 		products []*pb.CartItem, orderId uint64,
 	) (checkoutURL string, err error)
-
-	RegisterTransaction(ctx context.Context,
-		orderId, userId uint64, price int64,
-		currency dodopayments.Currency,
-		customerId, productId string) error
 
 	HandlePaymentWebhook(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Transaction, error)
 }
@@ -104,6 +100,7 @@ func (d *paymentService) DeleteProduct(ctx context.Context, productId string) er
 
 // CreateCheckoutSession - returns url to check out page and error.
 func (d *paymentService) CreateCheckoutSession(ctx context.Context,
+	userId uint64,
 	customerId string,
 	redirect string,
 	products []*pb.CartItem, orderId uint64) (checkoutURL string, err error) {
@@ -130,7 +127,7 @@ func (d *paymentService) CreateCheckoutSession(ctx context.Context,
 		})
 	}
 
-	return d.client.CreateCheckoutSession(ctx, customerId, redirect, dodoProducts, orderId)
+	return d.client.CreateCheckoutSession(ctx, userId, customerId, redirect, dodoProducts, orderId)
 }
 
 func (d *paymentService) CreateCustomerPortalSession(ctx context.Context, customer *models.Customer) (string, error) {
@@ -163,40 +160,16 @@ func (d *paymentService) FindOrCreateCustomer(ctx context.Context, userId uint64
 	return customer, err
 }
 
-func (d *paymentService) RegisterTransaction(ctx context.Context,
-	orderId, userId uint64, price int64,
-	currency dodopayments.Currency,
-	customerId, productId string) error {
-	transaction := &models.Transaction{
-		OrderId:    orderId,
-		UserId:     userId,
-		CustomerId: customerId,
-		ProductId:  productId,
-		Amount:     price,
-		Currency:   string(currency),
-	}
-
-	return d.paymentRepository.RegisterTransaction(ctx, transaction)
-}
-
 func (d *paymentService) HandlePaymentWebhook(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Transaction, error) {
 	updatedTransaction, err := d.client.HandleWebhook(w, r)
 	if err != nil {
 		return nil, err
 	}
 
-	transaction, err := d.paymentRepository.GetTransactionByProductID(ctx, updatedTransaction.ProductId)
+	err = d.paymentRepository.RegisterTransaction(ctx, updatedTransaction)
 	if err != nil {
 		return nil, err
 	}
 
-	transaction.PaymentId = updatedTransaction.PaymentId
-	transaction.Status = updatedTransaction.Status
-
-	err = d.paymentRepository.UpdateTransaction(ctx, transaction)
-	if err != nil {
-		return nil, err
-	}
-
-	return transaction, nil
+	return updatedTransaction, nil
 }

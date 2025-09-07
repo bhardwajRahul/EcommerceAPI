@@ -1,7 +1,7 @@
 package models
 
 import (
-	"time"
+	"gorm.io/gorm"
 )
 
 type TransactionStatus string
@@ -16,13 +16,13 @@ func (s TransactionStatus) String() string {
 }
 
 type Transaction struct {
-	CreatedAt  time.Time `json:"createdAt" gorm:"column:created_at;"`
-	OrderId    uint64    `json:"order_id"`
-	UserId     uint64    `json:"user_id"`
-	CustomerId string    `json:"customer_id"`
-	ProductId  string    `json:"product_id" gorm:"primaryKey;"`
-	PaymentId  string    `json:"payment_id"`
-	Amount     int64     `json:"amount"`
-	Currency   string    `json:"currency"`
-	Status     string    `json:"status" gorm:"type:varchar(20)"`
+	gorm.Model
+	OrderId      uint64 `json:"order_id"`
+	UserId       uint64 `json:"user_id"`
+	CustomerId   string `json:"customer_id"`
+	PaymentId    string `json:"payment_id"`
+	TotalPrice   int64  `json:"total_price"`
+	SettledPrice int64  `json:"settled_price"`
+	Currency     string `json:"currency"`
+	Status       string `json:"status" gorm:"type:varchar(20)"`
 }

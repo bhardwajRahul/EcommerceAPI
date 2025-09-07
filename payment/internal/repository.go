@@ -21,7 +21,6 @@ type Repository interface {
 	UpdateProduct(ctx context.Context, product *models.Product) error
 	DeleteProduct(ctx context.Context, productId string) error
 
-	GetTransactionByProductID(ctx context.Context, productId string) (*models.Transaction, error)
 	RegisterTransaction(ctx context.Context, transaction *models.Transaction) error
 	UpdateTransaction(ctx context.Context, transaction *models.Transaction) error
 }
@@ -120,18 +119,6 @@ func (repository *postgresRepository) UpdateProduct(ctx context.Context, product
 
 func (repository *postgresRepository) DeleteProduct(ctx context.Context, productId string) error {
 	return repository.db.WithContext(ctx).Delete(&models.Product{}, "product_id = ?", productId).Error
-}
-
-func (repository *postgresRepository) GetTransactionByProductID(ctx context.Context, productId string) (*models.Transaction, error) {
-	transaction := models.Transaction{
-		ProductId: productId,
-	}
-
-	err := repository.db.WithContext(ctx).First(&transaction).Error
-	if err != nil {
-		return nil, err
-	}
-	return &transaction, nil
 }
 
 func (repository *postgresRepository) RegisterTransaction(ctx context.Context, transaction *models.Transaction) error {

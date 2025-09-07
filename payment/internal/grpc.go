@@ -20,7 +20,7 @@ func (s *grpcServer) CreateCheckoutSession(ctx context.Context, request *pb.Chec
 		return nil, err
 	}
 
-	checkoutUrl, err := s.service.CreateCheckoutSession(ctx, customer.CustomerId, request.RedirectURL, request.Products, request.OrderId)
+	checkoutUrl, err := s.service.CreateCheckoutSession(ctx, request.UserId, customer.CustomerId, request.RedirectURL, request.Products, request.OrderId)
 	if err != nil {
 		return nil, err
 	}

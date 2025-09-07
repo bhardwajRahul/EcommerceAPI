@@ -34,6 +34,7 @@ type PaymentClient interface {
 	CreateCustomerSession(ctx context.Context, customerId string) (string, error)
 
 	CreateCheckoutSession(ctx context.Context,
+		userId uint64,
 		customerId string, redirect string,
 		dodoProducts []dodopayments.CheckoutSessionRequestProductCartParam, orderId uint64) (checkoutURL string, err error)
 
@@ -124,6 +125,7 @@ func (d *dodoClient) ArchiveProduct(ctx context.Context, productId string) error
 }
 
 func (d *dodoClient) CreateCheckoutSession(ctx context.Context,
+	userId uint64,
 	customerId string, redirect string,
 	dodoProducts []dodopayments.CheckoutSessionRequestProductCartParam, orderId uint64) (checkoutURL string, err error) {
 
@@ -136,7 +138,10 @@ func (d *dodoClient) CreateCheckoutSession(ctx context.Context,
 			),
 			ReturnURL:   dodopayments.F(redirect),
 			ProductCart: dodopayments.F(dodoProducts),
-			Metadata:    dodopayments.F(map[string]string{"order_id": fmt.Sprintf("%d", orderId)}),
+			Metadata: dodopayments.F(map[string]string{
+				"order_id": fmt.Sprintf("%d", orderId),
+				"user_id":  fmt.Sprintf("%d", userId),
+			}),
 		},
 	})
 
@@ -191,15 +196,15 @@ func (d *dodoClient) HandleWebhook(w http.ResponseWriter, r *http.Request) (*mod
 		return nil, err
 	}
 
-	var productId string
-	for _, p := range payload.Data.ProductCart {
-		productId = p.ProductID
-	}
-
 	transaction := &models.Transaction{
-		CustomerId: payload.Data.Customer.CustomerID,
-		ProductId:  productId,
-		PaymentId:  payload.Data.PaymentId,
+		OrderId:      payload.Data.Metadata.OrderId,
+		UserId:       payload.Data.Metadata.UserId,
+		CustomerId:   payload.Data.Customer.CustomerID,
+		PaymentId:    payload.Data.PaymentId,
+		TotalPrice:   payload.Data.TotalAmount,
+		SettledPrice: payload.Data.SettledAmount,
+		Currency:     string(payload.Data.Currency),
+		Status:       string(payload.Data.Status),
 	}
 
 	// Process the webhook based on event type
