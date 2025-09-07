@@ -27,7 +27,7 @@ type Service interface {
 	CreateCheckoutSession(ctx context.Context,
 		customerId string,
 		redirect string,
-		products []*pb.Product, orderId uint64,
+		products []*pb.CartItem, orderId uint64,
 	) (checkoutURL string, err error)
 
 	RegisterTransaction(ctx context.Context,
@@ -106,7 +106,7 @@ func (d *paymentService) DeleteProduct(ctx context.Context, productId string) er
 func (d *paymentService) CreateCheckoutSession(ctx context.Context,
 	customerId string,
 	redirect string,
-	products []*pb.Product, orderId uint64) (checkoutURL string, err error) {
+	products []*pb.CartItem, orderId uint64) (checkoutURL string, err error) {
 
 	productIds := make([]string, len(products))
 	productQuantities := make(map[string]uint64, len(products))

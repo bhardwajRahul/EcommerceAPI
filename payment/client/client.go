@@ -44,7 +44,7 @@ func (client *Client) CreateCustomerPortalSession(ctx context.Context, userId ui
 }
 
 func (client *Client) CreateCheckoutSession(ctx context.Context, orderId, userId int,
-	email, name, redirectUrl string, products []*pb.Product) (string, error) {
+	email, name, redirectUrl string, products []*pb.CartItem) (string, error) {
 	res, err := client.service.CreateCheckoutSession(ctx, &pb.CheckoutRequest{
 		UserId:      uint64(userId),
 		Email:       email,

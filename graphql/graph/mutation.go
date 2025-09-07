@@ -191,9 +191,9 @@ func (resolver *mutationResolver) CreateCheckoutSession(ctx context.Context, det
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	var products []*payment.Product
+	var products []*payment.CartItem
 	for _, product := range details.Products {
-		products = append(products, &payment.Product{
+		products = append(products, &payment.CartItem{
 			ProductId: product.ID,
 			Quantity:  uint64(product.Quantity),
 		})

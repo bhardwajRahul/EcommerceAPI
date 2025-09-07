@@ -22,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type Product struct {
+type CartItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProductId     string                 `protobuf:"bytes,1,opt,name=productId,proto3" json:"productId,omitempty"`
 	Quantity      uint64                 `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
@@ -30,20 +30,20 @@ type Product struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Product) Reset() {
-	*x = Product{}
+func (x *CartItem) Reset() {
+	*x = CartItem{}
 	mi := &file_payment_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Product) String() string {
+func (x *CartItem) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Product) ProtoMessage() {}
+func (*CartItem) ProtoMessage() {}
 
-func (x *Product) ProtoReflect() protoreflect.Message {
+func (x *CartItem) ProtoReflect() protoreflect.Message {
 	mi := &file_payment_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,19 +55,19 @@ func (x *Product) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Product.ProtoReflect.Descriptor instead.
-func (*Product) Descriptor() ([]byte, []int) {
+// Deprecated: Use CartItem.ProtoReflect.Descriptor instead.
+func (*CartItem) Descriptor() ([]byte, []int) {
 	return file_payment_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Product) GetProductId() string {
+func (x *CartItem) GetProductId() string {
 	if x != nil {
 		return x.ProductId
 	}
 	return ""
 }
 
-func (x *Product) GetQuantity() uint64 {
+func (x *CartItem) GetQuantity() uint64 {
 	if x != nil {
 		return x.Quantity
 	}
@@ -80,7 +80,7 @@ type CheckoutRequest struct {
 	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	RedirectURL   string                 `protobuf:"bytes,4,opt,name=redirectURL,proto3" json:"redirectURL,omitempty"`
-	Products      []*Product             `protobuf:"bytes,5,rep,name=products,proto3" json:"products,omitempty"`
+	Products      []*CartItem            `protobuf:"bytes,5,rep,name=products,proto3" json:"products,omitempty"`
 	OrderId       uint64                 `protobuf:"varint,6,opt,name=orderId,proto3" json:"orderId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -144,7 +144,7 @@ func (x *CheckoutRequest) GetRedirectURL() string {
 	return ""
 }
 
-func (x *CheckoutRequest) GetProducts() []*Product {
+func (x *CheckoutRequest) GetProducts() []*CartItem {
 	if x != nil {
 		return x.Products
 	}
@@ -222,16 +222,16 @@ var File_payment_proto protoreflect.FileDescriptor
 
 const file_payment_proto_rawDesc = "" +
 	"\n" +
-	"\rpayment.proto\x12\x02pb\x1a\x1egoogle/protobuf/wrappers.proto\"C\n" +
-	"\aProduct\x12\x1c\n" +
+	"\rpayment.proto\x12\x02pb\x1a\x1egoogle/protobuf/wrappers.proto\"D\n" +
+	"\bCartItem\x12\x1c\n" +
 	"\tproductId\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x04R\bquantity\"\xb8\x01\n" +
+	"\bquantity\x18\x02 \x01(\x04R\bquantity\"\xb9\x01\n" +
 	"\x0fCheckoutRequest\x12\x16\n" +
 	"\x06userId\x18\x01 \x01(\x04R\x06userId\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
-	"\vredirectURL\x18\x04 \x01(\tR\vredirectURL\x12'\n" +
-	"\bproducts\x18\x05 \x03(\v2\v.pb.ProductR\bproducts\x12\x18\n" +
+	"\vredirectURL\x18\x04 \x01(\tR\vredirectURL\x12(\n" +
+	"\bproducts\x18\x05 \x03(\v2\f.pb.CartItemR\bproducts\x12\x18\n" +
 	"\aorderId\x18\x06 \x01(\x04R\aorderId\"v\n" +
 	"\x15CustomerPortalRequest\x12\x16\n" +
 	"\x06userId\x18\x01 \x01(\x04R\x06userId\x12\x19\n" +
@@ -257,13 +257,13 @@ func file_payment_proto_rawDescGZIP() []byte {
 
 var file_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_payment_proto_goTypes = []any{
-	(*Product)(nil),                // 0: pb.Product
+	(*CartItem)(nil),               // 0: pb.CartItem
 	(*CheckoutRequest)(nil),        // 1: pb.CheckoutRequest
 	(*CustomerPortalRequest)(nil),  // 2: pb.CustomerPortalRequest
 	(*wrapperspb.StringValue)(nil), // 3: google.protobuf.StringValue
 }
 var file_payment_proto_depIdxs = []int32{
-	0, // 0: pb.CheckoutRequest.products:type_name -> pb.Product
+	0, // 0: pb.CheckoutRequest.products:type_name -> pb.CartItem
 	1, // 1: pb.PaymentService.CreateCheckoutSession:input_type -> pb.CheckoutRequest
 	2, // 2: pb.PaymentService.CreateCustomerPortalSession:input_type -> pb.CustomerPortalRequest
 	3, // 3: pb.PaymentService.CreateCheckoutSession:output_type -> google.protobuf.StringValue
