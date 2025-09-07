@@ -82,13 +82,17 @@ input CustomerPortalSessionInput {
     name: String!
 }
 
+input CheckoutProductInput {
+    id: String!
+    quantity: Int!
+}
+
 input CheckoutInput {
     accountId: Int!
     email: String!
     name: String!
     redirectUrl: String!
-    price: Int!
-    currency: String!
+    products: [CheckoutProductInput]!
     orderId: Int!
 }
 
@@ -100,7 +104,7 @@ type Mutation {
     deleteProduct(id: String!): Boolean
     createOrder(order: OrderInput!): Order
     createCustomerPortalSession(credentials: CustomerPortalSessionInput): RedirectResponse
-    checkout(details: CheckoutInput): RedirectResponse
+    createCheckoutSession(details: CheckoutInput): RedirectResponse
 }
 
 type Query{

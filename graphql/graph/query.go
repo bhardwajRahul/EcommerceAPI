@@ -6,6 +6,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/rasadov/EcommerceAPI/graphql/generated"
+	"github.com/rasadov/EcommerceAPI/graphql/models"
+	"github.com/rasadov/EcommerceAPI/graphql/utils"
 	"github.com/rasadov/EcommerceAPI/pkg/auth"
 )
 
@@ -15,9 +18,9 @@ type queryResolver struct {
 
 func (resolver *queryResolver) Accounts(
 	ctx context.Context,
-	pagination *PaginationInput,
+	pagination *generated.PaginationInput,
 	id *int,
-) ([]*Account, error) {
+) ([]*models.Account, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -27,7 +30,7 @@ func (resolver *queryResolver) Accounts(
 			log.Println(err)
 			return nil, err
 		}
-		return []*Account{{
+		return []*models.Account{{
 			ID:    uint64(res.ID),
 			Name:  res.Name,
 			Email: res.Email,
@@ -36,7 +39,7 @@ func (resolver *queryResolver) Accounts(
 
 	skip, take := uint64(0), uint64(0)
 	if pagination != nil {
-		skip, take = pagination.bounds()
+		skip, take = utils.Bounds(pagination)
 	}
 	accountList, err := resolver.server.accountClient.GetAccounts(ctx, skip, take)
 	if err != nil {
@@ -44,9 +47,9 @@ func (resolver *queryResolver) Accounts(
 		return nil, err
 	}
 
-	var accounts []*Account
+	var accounts []*models.Account
 	for _, account := range accountList {
-		account := &Account{
+		account := &models.Account{
 			ID:    uint64(account.ID),
 			Name:  account.Name,
 			Email: account.Email,
@@ -59,11 +62,11 @@ func (resolver *queryResolver) Accounts(
 
 func (resolver *queryResolver) Product(
 	ctx context.Context,
-	pagination *PaginationInput,
+	pagination *generated.PaginationInput,
 	query, id *string,
 	viewedProductsIds []*string,
 	byAccountId *bool,
-) ([]*Product, error) {
+) ([]*generated.Product, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -74,7 +77,7 @@ func (resolver *queryResolver) Product(
 			log.Println(err)
 			return nil, err
 		}
-		return []*Product{{
+		return []*generated.Product{{
 			ID:          res.ID,
 			Name:        res.Name,
 			Description: res.Description,
@@ -83,7 +86,7 @@ func (resolver *queryResolver) Product(
 	}
 	skip, take := uint64(0), uint64(0)
 	if pagination != nil {
-		skip, take = pagination.bounds()
+		skip, take = utils.Bounds(pagination)
 	}
 
 	// Get recommendations
@@ -98,10 +101,10 @@ func (resolver *queryResolver) Product(
 			return nil, err
 		}
 		productList := res.GetRecommendedProducts()
-		var products []*Product
+		var products []*generated.Product
 		for _, product := range productList {
 			products = append(products,
-				&Product{
+				&generated.Product{
 					ID:          product.Id,
 					Name:        product.Name,
 					Description: product.Description,
@@ -125,10 +128,10 @@ func (resolver *queryResolver) Product(
 			return nil, err
 		}
 		productList := res.GetRecommendedProducts()
-		var products []*Product
+		var products []*generated.Product
 		for _, product := range productList {
 			products = append(products,
-				&Product{
+				&generated.Product{
 					ID:          product.Id,
 					Name:        product.Name,
 					Description: product.Description,
@@ -149,10 +152,10 @@ func (resolver *queryResolver) Product(
 		return nil, err
 	}
 
-	var products []*Product
+	var products []*generated.Product
 	for _, product := range productList {
 		products = append(products,
-			&Product{
+			&generated.Product{
 				ID:          product.ID,
 				Name:        product.Name,
 				Description: product.Description,
@@ -162,16 +165,4 @@ func (resolver *queryResolver) Product(
 	}
 
 	return products, nil
-}
-
-func (pagination PaginationInput) bounds() (uint64, uint64) {
-	skipValue := uint64(0)
-	takeValue := uint64(100)
-	if pagination.Skip != 0 {
-		skipValue = uint64(pagination.Skip)
-	}
-	if pagination.Take != 100 {
-		takeValue = uint64(pagination.Take)
-	}
-	return skipValue, takeValue
 }

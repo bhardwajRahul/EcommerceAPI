@@ -8,7 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/rasadov/EcommerceAPI/graphql/generated"
 	"github.com/rasadov/EcommerceAPI/order/models"
+	payment "github.com/rasadov/EcommerceAPI/payment/proto/pb"
 	"github.com/rasadov/EcommerceAPI/pkg/auth"
 )
 
@@ -20,7 +22,7 @@ type mutationResolver struct {
 	server *Server
 }
 
-func (resolver *mutationResolver) Register(ctx context.Context, in RegisterInput) (*AuthResponse, error) {
+func (resolver *mutationResolver) Register(ctx context.Context, in generated.RegisterInput) (*generated.AuthResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -36,10 +38,10 @@ func (resolver *mutationResolver) Register(ctx context.Context, in RegisterInput
 	}
 	ginContext.SetCookie("token", token, 3600, "/", "localhost", false, true)
 
-	return &AuthResponse{Token: token}, nil
+	return &generated.AuthResponse{Token: token}, nil
 }
 
-func (resolver *mutationResolver) Login(ctx context.Context, in LoginInput) (*AuthResponse, error) {
+func (resolver *mutationResolver) Login(ctx context.Context, in generated.LoginInput) (*generated.AuthResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -55,10 +57,10 @@ func (resolver *mutationResolver) Login(ctx context.Context, in LoginInput) (*Au
 	}
 	ginContext.SetCookie("token", token, 3600, "/", "localhost", false, true)
 
-	return &AuthResponse{Token: token}, nil
+	return &generated.AuthResponse{Token: token}, nil
 }
 
-func (resolver *mutationResolver) CreateProduct(ctx context.Context, in CreateProductInput) (*Product, error) {
+func (resolver *mutationResolver) CreateProduct(ctx context.Context, in generated.CreateProductInput) (*generated.Product, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -78,7 +80,7 @@ func (resolver *mutationResolver) CreateProduct(ctx context.Context, in CreatePr
 	log.Println("Created product:", postProduct)
 	log.Println("Product id: ", postProduct.ID)
 
-	return &Product{
+	return &generated.Product{
 		ID:          postProduct.ID,
 		Name:        postProduct.Name,
 		Description: postProduct.Description,
@@ -87,7 +89,7 @@ func (resolver *mutationResolver) CreateProduct(ctx context.Context, in CreatePr
 	}, nil
 }
 
-func (resolver *mutationResolver) UpdateProduct(ctx context.Context, in UpdateProductInput) (*Product, error) {
+func (resolver *mutationResolver) UpdateProduct(ctx context.Context, in generated.UpdateProductInput) (*generated.Product, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -100,7 +102,7 @@ func (resolver *mutationResolver) UpdateProduct(ctx context.Context, in UpdatePr
 	if err != nil {
 		return nil, err
 	}
-	return &Product{
+	return &generated.Product{
 		ID:          updatedProduct.ID,
 		Name:        updatedProduct.Name,
 		Description: updatedProduct.Description,
@@ -128,7 +130,7 @@ func (resolver *mutationResolver) DeleteProduct(ctx context.Context, id string) 
 	return &success, nil
 }
 
-func (resolver *mutationResolver) CreateOrder(ctx context.Context, in OrderInput) (*Order, error) {
+func (resolver *mutationResolver) CreateOrder(ctx context.Context, in generated.OrderInput) (*generated.Order, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -154,9 +156,9 @@ func (resolver *mutationResolver) CreateOrder(ctx context.Context, in OrderInput
 		return nil, err
 	}
 
-	var orderedProducts []*OrderedProduct
+	var orderedProducts []*generated.OrderedProduct
 	for _, orderedProduct := range postOrder.Products {
-		orderedProducts = append(orderedProducts, &OrderedProduct{
+		orderedProducts = append(orderedProducts, &generated.OrderedProduct{
 			ID:          orderedProduct.ID,
 			Name:        orderedProduct.Name,
 			Description: orderedProduct.Description,
@@ -165,7 +167,7 @@ func (resolver *mutationResolver) CreateOrder(ctx context.Context, in OrderInput
 		})
 	}
 
-	return &Order{
+	return &generated.Order{
 		ID:         int(postOrder.ID),
 		CreatedAt:  postOrder.CreatedAt,
 		TotalPrice: postOrder.TotalPrice,
@@ -173,7 +175,7 @@ func (resolver *mutationResolver) CreateOrder(ctx context.Context, in OrderInput
 	}, nil
 }
 
-func (resolver *mutationResolver) CreateCustomerPortalSession(ctx context.Context, credentials *CustomerPortalSessionInput) (*RedirectResponse, error) {
+func (resolver *mutationResolver) CreateCustomerPortalSession(ctx context.Context, credentials *generated.CustomerPortalSessionInput) (*generated.RedirectResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -182,19 +184,27 @@ func (resolver *mutationResolver) CreateCustomerPortalSession(ctx context.Contex
 		log.Println(err)
 		return nil, err
 	}
-	return &RedirectResponse{URL: UrlWithSession}, nil
+	return &generated.RedirectResponse{URL: UrlWithSession}, nil
 }
 
-func (resolver *mutationResolver) Checkout(ctx context.Context, details *CheckoutInput) (*RedirectResponse, error) {
+func (resolver *mutationResolver) CreateCheckoutSession(ctx context.Context, details *generated.CheckoutInput) (*generated.RedirectResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
+	var products []*payment.Product
+	for _, product := range details.Products {
+		products = append(products, &payment.Product{
+			ProductId: product.ID,
+			Quantity:  uint64(product.Quantity),
+		})
+	}
+
 	UrlWithCheckoutSession, err := resolver.server.paymentClient.CreateCheckoutSession(ctx, details.OrderID,
-		details.AccountID, details.Email, details.Name, details.RedirectURL, details.Price, details.Currency)
+		details.AccountID, details.Email, details.Name, details.RedirectURL, products)
 
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return &RedirectResponse{URL: UrlWithCheckoutSession}, nil
+	return &generated.RedirectResponse{URL: UrlWithCheckoutSession}, nil
 }

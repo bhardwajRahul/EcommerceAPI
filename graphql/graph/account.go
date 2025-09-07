@@ -4,17 +4,20 @@ import (
 	"context"
 	"log"
 	"time"
+
+	"github.com/rasadov/EcommerceAPI/graphql/generated"
+	"github.com/rasadov/EcommerceAPI/graphql/models"
 )
 
 type accountResolver struct {
 	server *Server
 }
 
-func (resolver *accountResolver) ID(ctx context.Context, obj *Account) (int, error) {
+func (resolver *accountResolver) ID(ctx context.Context, obj *models.Account) (int, error) {
 	return int(obj.ID), nil
 }
 
-func (resolver *accountResolver) Orders(ctx context.Context, obj *Account) ([]*Order, error) {
+func (resolver *accountResolver) Orders(ctx context.Context, obj *models.Account) ([]*generated.Order, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -24,11 +27,11 @@ func (resolver *accountResolver) Orders(ctx context.Context, obj *Account) ([]*O
 		return nil, err
 	}
 
-	var orders []*Order
+	var orders []*generated.Order
 	for _, order := range orderList {
-		var products []*OrderedProduct
+		var products []*generated.OrderedProduct
 		for _, orderedProduct := range order.Products {
-			products = append(products, &OrderedProduct{
+			products = append(products, &generated.OrderedProduct{
 				ID:          orderedProduct.ID,
 				Name:        orderedProduct.Name,
 				Description: orderedProduct.Description,
@@ -36,7 +39,7 @@ func (resolver *accountResolver) Orders(ctx context.Context, obj *Account) ([]*O
 				Quantity:    int(orderedProduct.Quantity),
 			})
 		}
-		orders = append(orders, &Order{
+		orders = append(orders, &generated.Order{
 			ID:         int(order.ID),
 			CreatedAt:  order.CreatedAt,
 			TotalPrice: order.TotalPrice,

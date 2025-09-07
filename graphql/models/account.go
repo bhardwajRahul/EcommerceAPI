@@ -1,4 +1,4 @@
-package graph
+package models
 
 type Account struct {
 	ID     uint64  `json:"id"`

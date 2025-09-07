@@ -4,6 +4,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 
 	account "github.com/rasadov/EcommerceAPI/account/client"
+	"github.com/rasadov/EcommerceAPI/graphql/generated"
 	order "github.com/rasadov/EcommerceAPI/order/client"
 	payment "github.com/rasadov/EcommerceAPI/payment/client"
 	product "github.com/rasadov/EcommerceAPI/product/client"
@@ -62,26 +63,26 @@ func NewGraphQLServer(accountUrl, productUrl, orderUrl, paymentUrl, recommenderU
 	}, nil
 }
 
-func (server *Server) Mutation() MutationResolver {
+func (server *Server) Mutation() generated.MutationResolver {
 	return &mutationResolver{
 		server: server,
 	}
 }
 
-func (server *Server) Query() QueryResolver {
+func (server *Server) Query() generated.QueryResolver {
 	return &queryResolver{
 		server: server,
 	}
 }
 
-func (server *Server) Account() AccountResolver {
+func (server *Server) Account() generated.AccountResolver {
 	return &accountResolver{
 		server: server,
 	}
 }
 
 func (server *Server) ToExecutableSchema() graphql.ExecutableSchema {
-	return NewExecutableSchema(Config{
+	return generated.NewExecutableSchema(generated.Config{
 		Resolvers: server,
 	})
 }
