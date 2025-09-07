@@ -38,13 +38,58 @@ func NewPaymentService(client PaymentClient, paymentRepository Repository) Servi
 	return &paymentService{client: client, paymentRepository: paymentRepository}
 }
 
-// CreateCheckoutSession - returns url to check out page, productId and error.
-// Called after creating product and registering productId with order
+// RegisterProduct - registers product with Dodopayments and returns productId and error.
+func (d *paymentService) RegisterProduct(ctx context.Context,
+	name string, price int64,
+	customerId, productId string) error {
+
+	// We will use USD as currency and Digital Products as tax category for now to keep it simple
+	product, err := d.client.CreateProduct(ctx, name, price,
+		dodopayments.CurrencyUsd,
+		dodopayments.TaxCategoryDigitalProducts,
+		customerId, productId)
+
+	if err != nil {
+		return err
+	}
+
+	return d.paymentRepository.SaveProduct(ctx, &models.Product{
+		ProductID:     productId,
+		DodoProductID: product.ProductID,
+		Price:         product.Price.FixedPrice,
+		Currency:      string(product.Price.Currency),
+	})
+}
+
+// CreateCheckoutSession - returns url to check out page and error.
 func (d *paymentService) CreateCheckoutSession(ctx context.Context,
 	customerId string,
 	redirect string,
 	products []*pb.Product, orderId uint64) (checkoutURL string, err error) {
-	return d.client.CreateCheckoutSession(ctx, customerId, redirect, products, orderId)
+
+	productIds := make([]string, len(products))
+	productQuantities := make(map[string]uint64, len(products))
+
+	for i, product := range products {
+		productIds[i] = product.ProductId
+		productQuantities[product.ProductId] = product.Quantity
+	}
+
+	modelsProducts, err := d.paymentRepository.GetProductsByIDs(ctx, productIds)
+	if err != nil {
+		return "", err
+	}
+
+	var dodoProducts []dodopayments.CheckoutSessionRequestProductCartParam
+
+	for _, product := range modelsProducts {
+		dodoProducts = append(dodoProducts, dodopayments.CheckoutSessionRequestProductCartParam{
+			ProductID: dodopayments.F(product.DodoProductID),
+			Quantity:  dodopayments.F(int64(productQuantities[product.ProductID])),
+		})
+	}
+
+	return d.client.CreateCheckoutSession(ctx, customerId, redirect, dodoProducts, orderId)
 }
 
 func (d *paymentService) CreateCustomerPortalSession(ctx context.Context, customer *models.Customer) (string, error) {

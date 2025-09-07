@@ -5,15 +5,12 @@ import (
 )
 
 type Product struct {
-	ProductID string `json:"productId"`
-	Price     int64  `json:"price"`
-	Currency  string `json:"currency"`
+	ID            uint64 `json:"id" gorm:"primarykey;autoIncrement"`
+	ProductID     string `json:"productId"`
+	DodoProductID string `json:"dodoProductId"`
+	Price         int64  `json:"price"`
+	Currency      string `json:"currency"`
 
 	CreatedAt time.Time `json:"createdAt" gorm:"column:created_at;"`
 	UpdatedAt time.Time `json:"updatedAt" gorm:"column:updated_at;"`
-}
-
-type ProductInput struct {
-	ProductID string `json:"productId"`
-	Quantity  int    `json:"quantity"`
 }

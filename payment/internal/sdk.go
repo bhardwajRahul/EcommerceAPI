@@ -20,6 +20,11 @@ import (
 )
 
 type PaymentClient interface {
+	CreateProduct(ctx context.Context,
+		name string, price int64,
+		currency dodopayments.Currency,
+		taxCategory dodopayments.TaxCategory,
+		customerId, productId string) (*dodopayments.Product, error)
 	CreateCustomer(ctx context.Context, userId uint64, email, name string) (*models.Customer, error)
 	CreateCheckoutSession(ctx context.Context,
 		customerId string, redirect string,
@@ -47,6 +52,29 @@ func NewDodoClient(apiKey string, testMode bool) PaymentClient {
 
 type dodoClient struct {
 	client *dodopayments.Client
+}
+
+func (d *dodoClient) CreateProduct(ctx context.Context,
+	name string, price int64,
+	currency dodopayments.Currency,
+	taxCategory dodopayments.TaxCategory,
+	customerId, productId string) (*dodopayments.Product, error) {
+
+	product, err := d.client.Products.New(ctx, dodopayments.ProductNewParams{
+		Name: dodopayments.F(name),
+		Price: dodopayments.F[dodopayments.PriceUnionParam](
+			dodopayments.PriceOneTimePriceParam{
+				Price:    dodopayments.F(price),
+				Currency: dodopayments.F(currency),
+				Discount: dodopayments.F[int64](0),
+			},
+		),
+		TaxCategory: dodopayments.F(taxCategory),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
 }
 
 func (d *dodoClient) CreateCustomer(ctx context.Context, userId uint64, email, name string) (*models.Customer, error) {

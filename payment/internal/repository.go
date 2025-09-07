@@ -12,7 +12,9 @@ type Repository interface {
 	Close()
 	GetCustomerByCustomerID(ctx context.Context, customerId string) (*models.Customer, error)
 	GetCustomerByUserID(ctx context.Context, userId uint64) (*models.Customer, error)
+	GetProductsByIDs(ctx context.Context, productIds []string) ([]*models.Product, error)
 	SaveCustomer(ctx context.Context, customer *models.Customer) error
+	SaveProduct(ctx context.Context, product *models.Product) error
 	GetTransactionByProductID(ctx context.Context, productId string) (*models.Transaction, error)
 	RegisterTransaction(ctx context.Context, transaction *models.Transaction) error
 	UpdateTransaction(ctx context.Context, transaction *models.Transaction) error
@@ -24,6 +26,11 @@ type postgresRepository struct {
 
 func NewPostgresRepository(db *gorm.DB) (Repository, error) {
 	err := db.AutoMigrate(&models.Customer{})
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.AutoMigrate(&models.Product{})
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +82,21 @@ func (repository *postgresRepository) GetCustomerByUserID(ctx context.Context, u
 	return &customer, nil
 }
 
+func (repository *postgresRepository) GetProductsByIDs(ctx context.Context, productIds []string) ([]*models.Product, error) {
+	var products []*models.Product
+	err := repository.db.WithContext(ctx).Find(&products, "product_id IN (?)", productIds).Error
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
+}
+
 func (repository *postgresRepository) SaveCustomer(ctx context.Context, customer *models.Customer) error {
 	return repository.db.WithContext(ctx).Create(&customer).Error
+}
+
+func (repository *postgresRepository) SaveProduct(ctx context.Context, product *models.Product) error {
+	return repository.db.WithContext(ctx).Create(&product).Error
 }
 
 func (repository *postgresRepository) GetTransactionByProductID(ctx context.Context, productId string) (*models.Transaction, error) {
