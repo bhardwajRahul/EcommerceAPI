@@ -6,7 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.70
 	github.com/IBM/sarama v1.45.1
 	github.com/deckarep/golang-set/v2 v2.8.0
-	github.com/dodopayments/dodopayments-go v1.38.0
+	github.com/dodopayments/dodopayments-go v1.52.4
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/lib/pq v1.10.9
@@ -76,7 +76,7 @@ require (
 	github.com/sosodev/duration v1.3.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
-	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

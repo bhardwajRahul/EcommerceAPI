@@ -14,6 +14,7 @@ type Service interface {
 	PostOrder(ctx context.Context, accountID uint64, totalPrice float64, products []*models.OrderedProduct) (*models.Order, error)
 	GetOrdersForAccount(ctx context.Context, accountID uint64) ([]*models.Order, error)
 	UpdateOrderStatus(ctx context.Context, orderId uint64, status string) error
+	GetProducer() sarama.AsyncProducer
 }
 
 type orderService struct {
@@ -25,7 +26,7 @@ func NewOrderService(repository Repository, producer sarama.AsyncProducer) Servi
 	return &orderService{repository, producer}
 }
 
-func (service orderService) Producer() sarama.AsyncProducer {
+func (service orderService) GetProducer() sarama.AsyncProducer {
 	return service.producer
 }
 

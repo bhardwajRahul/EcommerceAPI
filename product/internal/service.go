@@ -19,7 +19,7 @@ type Service interface {
 	SearchProducts(ctx context.Context, query string, skip, take uint64) ([]*models.Product, error)
 	UpdateProduct(ctx context.Context, id, name, description string, price float64, accountId int) (*models.Product, error)
 	DeleteProduct(ctx context.Context, productId string, accountId int) error
-	Producer() sarama.AsyncProducer
+	GetProducer() sarama.AsyncProducer
 }
 
 type productService struct {
@@ -31,7 +31,7 @@ func NewProductService(repository Repository, producer sarama.AsyncProducer) Ser
 	return &productService{repository, producer}
 }
 
-func (service productService) Producer() sarama.AsyncProducer {
+func (service productService) GetProducer() sarama.AsyncProducer {
 	return service.producer
 }
 
