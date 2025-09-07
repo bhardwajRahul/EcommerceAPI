@@ -25,11 +25,18 @@ type PaymentClient interface {
 		currency dodopayments.Currency,
 		taxCategory dodopayments.TaxCategory,
 		customerId, productId string) (*dodopayments.Product, error)
+	UpdateProduct(ctx context.Context,
+		productId string,
+		name string, price int64) error
+	ArchiveProduct(ctx context.Context, productId string) error
+
 	CreateCustomer(ctx context.Context, userId uint64, email, name string) (*models.Customer, error)
+	CreateCustomerSession(ctx context.Context, customerId string) (string, error)
+
 	CreateCheckoutSession(ctx context.Context,
 		customerId string, redirect string,
 		dodoProducts []dodopayments.CheckoutSessionRequestProductCartParam, orderId uint64) (checkoutURL string, err error)
-	CreateCustomerSession(ctx context.Context, customerId string) (string, error)
+
 	HandleWebhook(w http.ResponseWriter, r *http.Request) (*models.Transaction, error)
 }
 
@@ -94,6 +101,26 @@ func (d *dodoClient) CreateCustomer(ctx context.Context, userId uint64, email, n
 		CustomerId:   customer.CustomerID,
 		CreatedAt:    customer.CreatedAt,
 	}, nil
+}
+
+func (d *dodoClient) UpdateProduct(ctx context.Context,
+	productId string,
+	name string, price int64) error {
+
+	return d.client.Products.Update(ctx, productId, dodopayments.ProductUpdateParams{
+		Name: dodopayments.F(name),
+		Price: dodopayments.F[dodopayments.PriceUnionParam](
+			dodopayments.PriceOneTimePriceParam{
+				Price:    dodopayments.F(price),
+				Currency: dodopayments.F(dodopayments.CurrencyUsd),
+				Discount: dodopayments.F[int64](0),
+			},
+		),
+	})
+}
+
+func (d *dodoClient) ArchiveProduct(ctx context.Context, productId string) error {
+	return d.client.Products.Archive(ctx, productId)
 }
 
 func (d *dodoClient) CreateCheckoutSession(ctx context.Context,

@@ -12,20 +12,29 @@ import (
 )
 
 type Service interface {
+	RegisterProduct(ctx context.Context,
+		name string, price int64,
+		customerId, productId string) error
+	UpdateProduct(ctx context.Context, productId string, name string, price int64) error
+	DeleteProduct(ctx context.Context, productId string) error
+
 	CreateCustomerPortalSession(ctx context.Context,
 		customer *models.Customer) (string, error)
 	FindOrCreateCustomer(ctx context.Context,
 		userId uint64,
 		email, name string) (*models.Customer, error)
+
 	CreateCheckoutSession(ctx context.Context,
 		customerId string,
 		redirect string,
 		products []*pb.Product, orderId uint64,
 	) (checkoutURL string, err error)
+
 	RegisterTransaction(ctx context.Context,
 		orderId, userId uint64, price int64,
 		currency dodopayments.Currency,
 		customerId, productId string) error
+
 	HandlePaymentWebhook(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.Transaction, error)
 }
 
@@ -59,6 +68,38 @@ func (d *paymentService) RegisterProduct(ctx context.Context,
 		Price:         product.Price.FixedPrice,
 		Currency:      string(product.Price.Currency),
 	})
+}
+
+func (d *paymentService) UpdateProduct(ctx context.Context,
+	productId string,
+	name string, price int64) error {
+	err := d.client.UpdateProduct(ctx, productId, name, price)
+	if err != nil {
+		return err
+	}
+
+	product, err := d.paymentRepository.GetProductByProductID(ctx, productId)
+	if err != nil {
+		return err
+	}
+
+	if product.Price != price {
+		product.Price = price
+		err = d.paymentRepository.UpdateProduct(ctx, product)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d *paymentService) DeleteProduct(ctx context.Context, productId string) error {
+	err := d.client.ArchiveProduct(ctx, productId)
+	if err != nil {
+		return err
+	}
+
+	return d.paymentRepository.DeleteProduct(ctx, productId)
 }
 
 // CreateCheckoutSession - returns url to check out page and error.

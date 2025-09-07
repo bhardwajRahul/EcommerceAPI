@@ -3,34 +3,17 @@ package kafka
 import (
 	"context"
 	"log"
-	"strings"
 
 	"github.com/IBM/sarama"
 )
 
+type ConsumerService interface {
+	GetConsumer() sarama.Consumer
+}
+
 // StartEventsConsumer starts a simple Kafka consumer that listens to the given topic
-func StartEventsConsumer(ctx context.Context, brokersCSV, topic string, OnEvent func(p int32, pc sarama.PartitionConsumer)) error {
-	if brokersCSV == "" {
-		log.Println("Kafka brokers are empty; skipping events consumer")
-		return nil
-	}
-
-	brokers := strings.Split(brokersCSV, ",")
-
-	config := sarama.NewConfig()
-	config.Consumer.Return.Errors = true
-
-	consumer, err := sarama.NewConsumer(brokers, config)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := consumer.Close(); err != nil {
-			log.Printf("Error closing Kafka consumer: %v", err)
-		}
-	}()
-
-	partitions, err := consumer.Partitions(topic)
+func StartEventsConsumer(ctx context.Context, service ConsumerService, topic string, OnEvent func(p int32, pc sarama.PartitionConsumer)) error {
+	partitions, err := service.GetConsumer().Partitions(topic)
 	if err != nil {
 		return err
 	}
@@ -39,7 +22,7 @@ func StartEventsConsumer(ctx context.Context, brokersCSV, topic string, OnEvent 
 
 	done := make(chan struct{})
 	for _, partition := range partitions {
-		pc, err := consumer.ConsumePartition(topic, partition, sarama.OffsetNewest)
+		pc, err := service.GetConsumer().ConsumePartition(topic, partition, sarama.OffsetNewest)
 		if err != nil {
 			log.Printf("Error starting partition consumer p=%d: %v", partition, err)
 			continue
@@ -51,4 +34,12 @@ func StartEventsConsumer(ctx context.Context, brokersCSV, topic string, OnEvent 
 	<-ctx.Done()
 	close(done)
 	return nil
+}
+
+func CloseConsumer(service ConsumerService) {
+	if err := service.GetConsumer().Close(); err != nil {
+		log.Printf("Failed to close consumer: %v\n", err)
+	} else {
+		done <- true
+	}
 }

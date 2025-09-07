@@ -149,7 +149,7 @@ services:
       DATABASE_URL: postgres://rasadov:123456@payment_db/rasadov?sslmode=disable
       ORDER_SERVICE_URL: order:8080
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      # PRODUCT_EVENTS_TOPIC: product_events
+      PRODUCT_EVENTS_TOPIC: product_events
       # Add Payment Provider Credentials
     restart: on-failure
 

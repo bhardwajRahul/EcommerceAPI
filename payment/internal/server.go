@@ -1,12 +1,14 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"sync"
 
+	"github.com/IBM/sarama"
 	order "github.com/rasadov/EcommerceAPI/order/client"
 	"github.com/rasadov/EcommerceAPI/payment/proto/pb"
 	"google.golang.org/grpc"
@@ -14,9 +16,22 @@ import (
 )
 
 // StartServers runs both gRPC and HTTP webhook servers concurrently
-func StartServers(service Service, orderURL string, grpcPort, webhookPort int) error {
+func StartServers(service Service, consumer sarama.Consumer, orderURL string, grpcPort, webhookPort int) error {
 	var wg sync.WaitGroup
-	errCh := make(chan error, 2)
+	errCh := make(chan error, 3)
+
+	// Start Kafka consumer if available
+	if consumer != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			eventConsumer := NewEventConsumer(consumer, service)
+			ctx := context.Background()
+			if err := eventConsumer.StartProductEventsConsumer(ctx); err != nil {
+				errCh <- fmt.Errorf("kafka consumer error: %w", err)
+			}
+		}()
+	}
 
 	// Start gRPC server
 	wg.Add(1)
