@@ -47,15 +47,16 @@ Below is a high-level overview of the system architecture:
 
 - `API Gateway (GraphQL)` talks to:
     - `Account client` → `Account server` → `Postgres`
-    - `Product client` → `Product server` → `ElasticSearch`
-    - `Order client` → `Order server` → `Postgres` + Kafka  
+    - `Product client` → `Product server` → `ElasticSearch` + Kafka
+    - `Order client` → `Order server` → `Postgres` + Kafka
       (also communicates with Product service via gRPC)
-    - `Payment client` → `Payment service` → `payment provider` + `Postgres`
-    - `Recommender client` → `Recommender server` (Python) → `Postgres (Replica)`
+    - `Payment client` → `Payment service` → `payment provider` + `Postgres` + Kafka
+    - `Recommender client` → `Recommender server` (Python) → `Postgres (Replica)` + Kafka
 
 - **Event Flow**:
     - `Order` and `Product` services act as **Kafka producers**.
-    - `Recommender` service is a **Kafka consumer**, ingesting order/product events and updating internal state for recommendations.
+    - `Payment` service is a **Kafka consumer**, ingesting product events and saving them in payment provider (DodoPayments).
+    - `Recommender` service is also a **Kafka consumer**, ingesting order/product events and updating internal state for recommendations.
 
 ---
 
