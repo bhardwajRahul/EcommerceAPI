@@ -31,22 +31,6 @@ func SendMessageToRecommender(service Service, event any, topic string) error {
 	return nil
 }
 
-func MsgHandler(service Service) {
-	go func() {
-		for {
-			select {
-			case success := <-service.GetProducer().Successes():
-				log.Printf("Message sent to partition %d at offset %d\n", success.Partition, success.Offset)
-			case err := <-service.GetProducer().Errors():
-				log.Printf("Failed to send message: %v\n", err)
-			case <-done:
-				log.Println("Producer closed successfully")
-				return
-			}
-		}
-	}()
-}
-
 func Close(service Service) {
 	if err := service.GetProducer().Close(); err != nil {
 		log.Printf("Failed to close producer: %v\n", err)

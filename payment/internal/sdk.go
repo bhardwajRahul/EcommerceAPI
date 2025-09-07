@@ -15,14 +15,15 @@ import (
 	"github.com/dodopayments/dodopayments-go"
 	"github.com/dodopayments/dodopayments-go/option"
 	"github.com/rasadov/EcommerceAPI/payment/config"
+	"github.com/rasadov/EcommerceAPI/payment/dto"
 	"github.com/rasadov/EcommerceAPI/payment/models"
 )
 
 type PaymentClient interface {
 	CreateCustomer(ctx context.Context, userId uint64, email, name string) (*models.Customer, error)
-	CreateCheckoutLink(ctx context.Context,
-		email, name, redirect string, price int64,
-		currency dodopayments.Currency) (checkoutURL string, productId string, err error)
+	CreateCheckoutSession(ctx context.Context,
+		customerId string, redirect string,
+		dodoProducts []dodopayments.CheckoutSessionRequestProductCartParam, orderId uint64) (checkoutURL string, err error)
 	CreateCustomerSession(ctx context.Context, customerId string) (string, error)
 	HandleWebhook(w http.ResponseWriter, r *http.Request) (*models.Transaction, error)
 }
@@ -34,7 +35,6 @@ func NewDodoClient(apiKey string, testMode bool) PaymentClient {
 				option.WithBearerToken(apiKey),
 				option.WithEnvironmentTestMode(),
 			),
-			webhookSecret: "",
 		}
 	}
 
@@ -42,13 +42,11 @@ func NewDodoClient(apiKey string, testMode bool) PaymentClient {
 		client: dodopayments.NewClient(
 			option.WithBearerToken(apiKey),
 		),
-		webhookSecret: "",
 	}
 }
 
 type dodoClient struct {
-	client        *dodopayments.Client
-	webhookSecret string
+	client *dodopayments.Client
 }
 
 func (d *dodoClient) CreateCustomer(ctx context.Context, userId uint64, email, name string) (*models.Customer, error) {
@@ -62,35 +60,36 @@ func (d *dodoClient) CreateCustomer(ctx context.Context, userId uint64, email, n
 	}
 
 	return &models.Customer{
-		UserId:     userId,
-		CustomerId: customer.CustomerID,
-		CreatedAt:  customer.CreatedAt,
+		UserId:       userId,
+		BillingEmail: email,
+		BillingName:  name,
+		CustomerId:   customer.CustomerID,
+		CreatedAt:    customer.CreatedAt,
 	}, nil
 }
 
-func (d *dodoClient) CreateCheckoutLink(ctx context.Context,
-	email, name, redirect string,
-	price int64,
-	currency dodopayments.Currency) (checkoutURL string, productId string, err error) {
-	product, err := d.client.Products.New(ctx, dodopayments.ProductNewParams{
-		Price: dodopayments.F[dodopayments.PriceUnionParam](dodopayments.PriceOneTimePriceParam{
-			Currency:              dodopayments.F(currency),
-			Discount:              dodopayments.F(0.000000),
-			Price:                 dodopayments.F(price),
-			PurchasingPowerParity: dodopayments.F(true),
-			Type:                  dodopayments.F(dodopayments.PriceOneTimePriceTypeOneTimePrice),
-		}),
-		TaxCategory: dodopayments.F(dodopayments.TaxCategorySaas),
+func (d *dodoClient) CreateCheckoutSession(ctx context.Context,
+	customerId string, redirect string,
+	dodoProducts []dodopayments.CheckoutSessionRequestProductCartParam, orderId uint64) (checkoutURL string, err error) {
+
+	checkoutSession, err := d.client.CheckoutSessions.New(ctx, dodopayments.CheckoutSessionNewParams{
+		CheckoutSessionRequest: dodopayments.CheckoutSessionRequestParam{
+			Customer: dodopayments.F[dodopayments.CustomerRequestUnionParam](
+				dodopayments.AttachExistingCustomerParam{
+					CustomerID: dodopayments.F(customerId),
+				},
+			),
+			ReturnURL:   dodopayments.F(redirect),
+			ProductCart: dodopayments.F(dodoProducts),
+			Metadata:    dodopayments.F(map[string]string{"order_id": fmt.Sprintf("%d", orderId)}),
+		},
 	})
 
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	checkoutUrl := fmt.Sprintf(
-		"%s/%s?quantity=1&email=%s&disableEmail=true&fullName=%s&disableFullName=true&redirect_url=%s",
-		config.DodoCheckoutURL, product.ProductID, email, name, redirect)
-	return checkoutUrl, product.ProductID, nil
+	return checkoutSession.CheckoutURL, nil
 }
 
 func (d *dodoClient) CreateCustomerSession(ctx context.Context, customerId string) (string, error) {
@@ -130,7 +129,7 @@ func (d *dodoClient) HandleWebhook(w http.ResponseWriter, r *http.Request) (*mod
 	defer r.Body.Close()
 
 	// Parse webhook payload
-	var payload WebhookPayload
+	var payload dto.WebhookPayload
 
 	if err := json.Unmarshal(body, &payload); err != nil {
 		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)

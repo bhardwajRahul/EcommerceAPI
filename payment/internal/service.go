@@ -7,6 +7,7 @@ import (
 
 	"github.com/dodopayments/dodopayments-go"
 	"github.com/rasadov/EcommerceAPI/payment/models"
+	"github.com/rasadov/EcommerceAPI/payment/proto/pb"
 	"gorm.io/gorm"
 )
 
@@ -16,10 +17,11 @@ type Service interface {
 	FindOrCreateCustomer(ctx context.Context,
 		userId uint64,
 		email, name string) (*models.Customer, error)
-	GetCheckoutURL(ctx context.Context,
-		email, name, redirect string,
-		price int64,
-		currency dodopayments.Currency) (checkoutURL string, productId string, err error)
+	CreateCheckoutSession(ctx context.Context,
+		customerId string,
+		redirect string,
+		products []*pb.Product, orderId uint64,
+	) (checkoutURL string, err error)
 	RegisterTransaction(ctx context.Context,
 		orderId, userId uint64, price int64,
 		currency dodopayments.Currency,
@@ -36,13 +38,13 @@ func NewPaymentService(client PaymentClient, paymentRepository Repository) Servi
 	return &paymentService{client: client, paymentRepository: paymentRepository}
 }
 
-// GetCheckoutURL - returns url to check out page, productId and error.
+// CreateCheckoutSession - returns url to check out page, productId and error.
 // Called after creating product and registering productId with order
-func (d *paymentService) GetCheckoutURL(ctx context.Context,
-	email, name, redirect string,
-	price int64,
-	currency dodopayments.Currency) (checkoutURL string, productId string, err error) {
-	return d.client.CreateCheckoutLink(ctx, email, name, redirect, price, currency)
+func (d *paymentService) CreateCheckoutSession(ctx context.Context,
+	customerId string,
+	redirect string,
+	products []*pb.Product, orderId uint64) (checkoutURL string, err error) {
+	return d.client.CreateCheckoutSession(ctx, customerId, redirect, products, orderId)
 }
 
 func (d *paymentService) CreateCustomerPortalSession(ctx context.Context, customer *models.Customer) (string, error) {

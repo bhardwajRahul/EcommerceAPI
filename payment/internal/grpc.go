@@ -3,7 +3,6 @@ package internal
 import (
 	"context"
 
-	"github.com/dodopayments/dodopayments-go"
 	order "github.com/rasadov/EcommerceAPI/order/client"
 	"github.com/rasadov/EcommerceAPI/payment/proto/pb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -15,20 +14,13 @@ type grpcServer struct {
 	orderClient *order.Client
 }
 
-func (s *grpcServer) Checkout(ctx context.Context, request *pb.CheckoutRequest) (*wrapperspb.StringValue, error) {
+func (s *grpcServer) CreateCheckoutSession(ctx context.Context, request *pb.CheckoutRequest) (*wrapperspb.StringValue, error) {
 	customer, err := s.service.FindOrCreateCustomer(ctx, request.UserId, request.Email, request.Name)
 	if err != nil {
 		return nil, err
 	}
-	currency := dodopayments.Currency(request.Currency)
 
-	checkoutUrl, productId, err := s.service.GetCheckoutURL(ctx, request.Email, request.Name, request.RedirectURL, request.PriceCents, currency)
-	if err != nil {
-		return nil, err
-	}
-
-	// We will use these transaction on webhooks
-	err = s.service.RegisterTransaction(ctx, request.OrderId, request.UserId, request.PriceCents, currency, customer.CustomerId, productId)
+	checkoutUrl, err := s.service.CreateCheckoutSession(ctx, customer.CustomerId, request.RedirectURL, request.Products, request.OrderId)
 	if err != nil {
 		return nil, err
 	}
