@@ -79,12 +79,13 @@ func Test02Login(t *testing.T) {
 // 5) QUERY ACCOUNTS
 func Test05QueryAccounts(t *testing.T) {
 	query := `
-        query GetAccounts($pagination: PaginationInput) {
-          accounts(pagination: $pagination) {
+        query GetAccounts($pagination: PaginationInput, $id: String) {
+          accounts(pagination: $pagination, $id: String) {
             id
             name
             email
           }
+		  "id": "1",
         }
     `
 	variables := map[string]interface{}{
