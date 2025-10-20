@@ -24,6 +24,8 @@ func Test03CreateProduct(t *testing.T) {
 			"name":        "Test Product",
 			"description": "A test description",
 			"price":       12.99,
+			"id":          "1",
+			"accountId":   "1",
 		},
 	}
 
@@ -62,7 +64,7 @@ func Test06QueryProducts(t *testing.T) {
 			"take": 5,
 		},
 		// "query":       "",
-		// "id":         "",
+		 "id":         "1",
 		"recommended": false,
 	}
 
@@ -77,3 +79,67 @@ func Test06QueryProducts(t *testing.T) {
 
 	log.Println("Products:", products)
 }
+
+func Test07UpdateProduct(t *testing.T) {
+	query := `
+		mutation UpdateProduct($product: UpdateProductInput!) {
+			updateProduct(product: $product) {
+				id
+				name
+				description
+				price
+				accountId
+			}
+		}
+	`
+	variables := map[string]interface{}{
+		"product": map[string]interface{}{
+			"id":          "1",
+			"name":        "Updated Product",
+			"description": "An updated description",
+			"price":       15.99,
+			"accountId":   "1",
+		},
+	}
+
+	resp := doRequest(t, serverURL, query, variables)
+	assert.Nil(t, resp.Errors)
+
+	data, ok := resp.Data.(map[string]interface{})
+	assert.True(t, ok)
+
+	p, ok := data["updateProduct"].(map[string]interface{})
+	assert.True(t, ok)
+
+	assert.Equal(t, "1", p["id"])
+	assert.Equal(t, "Updated Product", p["name"])
+	assert.Equal(t, "An updated description", p["description"])
+	assert.EqualValues(t, 15.99, p["price"])
+	log.Println("Updated product:", p)
+}
+
+func Test08DeleteProduct(t *testing.T) {
+	query := `
+		mutation DeleteProduct($id: String!) {
+			deleteProduct(id: $id) {
+				id
+			}
+		}
+	`
+	variables := map[string]interface{}{
+		"id": "1",
+	}
+
+	resp := doRequest(t, serverURL, query, variables)
+	assert.Nil(t, resp.Errors)
+
+	data, ok := resp.Data.(map[string]interface{})
+	assert.True(t, ok)
+
+	p, ok := data["deleteProduct"].(map[string]interface{})
+	assert.True(t, ok)
+
+	assert.Equal(t, "1", p["id"])
+	log.Println("Deleted product:", p)
+}
+
